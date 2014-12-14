@@ -3,12 +3,44 @@ var map;
 var lastKnownPosition;
 var markers = [];
 var heartbeat;
+var riskimoUrl = 'http://riskimo.mooo.com/webservice/';
+var username = 'Test';
+
+function setOutpost(position) {
+    $.get(riskimoUrl + 'establish-base?latitude='
+        +position.lat()
+        +'&longitude='
+        +position.lng()
+        +'&username='+username,
+    function(response) {
+        console.log('Establish Base', response);
+    });
+
+    addOutpostsToMap();
+}
+
+function addOutpostsToMap() {
+    $.get(riskimoUrl + 'bases?username=' + username,
+    function(response) {
+        console.log('Bases', response);
+        var bases = response.response;
+        for(var i in bases) {
+            var base = bases[i];
+            new google.maps.Marker({
+                position: new google.maps.LatLng(base.location.latitude, base.location.longitude),
+                title: 'Base',
+                map: map,
+                icon: 'http://img2.wikia.nocookie.net/__cb20140526212505/eyevea-archives/images/9/9a/AD_Outpost_Map_Icon.png'
+            });
+        }
+    });
+}
 
 function geocodePosition(pos) {
     lastKnownPosition = pos;
-    getMessages(pos);
+    setOutpost(pos);
 
-    geocoder.geocode({
+    /*geocoder.geocode({
         latLng: pos
     }, function(responses) {
         if (responses && responses.length > 0) {
@@ -16,12 +48,8 @@ function geocodePosition(pos) {
         } else {
             updateMarkerAddress('Cannot determine address at this location.');
         }
-    });
+    });*/
 }
-
-$.get('url', function(response) {
-    console.log(response);
-});
 
 function initialize(position) {
     var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
@@ -35,8 +63,18 @@ function initialize(position) {
         position: latLng,
         title: 'Your Current Location',
         map: map,
-        draggable: true
+        icon: 'http://img2.wikia.nocookie.net/__cb20140526212505/eyevea-archives/images/9/9a/AD_Outpost_Map_Icon.png'
     });
+
+    geocodePosition(latLng);
+
+    /*new google.maps.Marker({
+        position: latLng,
+        title: 'Your Current Location',
+        map: map,
+        draggable: true,
+        icon: 'http://img2.wikia.nocookie.net/__cb20140526212505/eyevea-archives/images/9/9a/AD_Outpost_Map_Icon.png'
+    });*/
 
 /*
     // Update current position info.
@@ -57,13 +95,14 @@ function initialize(position) {
         updateMarkerStatus('Drag ended');
         geocodePosition(marker.getPosition());
     });
+*/
 
     google.maps.event.addListener(map, 'rightclick', function(event) {
         marker.setPosition(event.latLng);
         geocodePosition(marker.getPosition());
     });
 
-    heartbeat = setInterval(getMessages, 5000);*/
+    /*heartbeat = setInterval(getMessages, 5000);*/
 }
 
 function initializeDefault() {
