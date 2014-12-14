@@ -111,6 +111,16 @@ class WebserviceApiController extends Controller
 		return $this->_response_error("Not implemented yet");
 	}
 
+	public function getBases() {
+		try {
+			$bases = $this->service->getUserBases();
+		} catch (Exception $e) {
+			return $this->_response_exception($e);
+		}
+
+		return $this->_response_success($this->_formatBase($bases));
+	}
+
 
 	public function anyEstablishBase()
 	{

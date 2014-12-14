@@ -52,7 +52,8 @@ class RiskimoManager
 		// TODO -- make logic more dynamic for point threshold
 	}
 
+	public function getUserBases(User $user) {
+		return $user->bases;
+	}
 
 }
-
-
