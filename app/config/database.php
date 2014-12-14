@@ -83,6 +83,13 @@ return array(
 			'prefix'   => '',
 		),
 
+        'mongodb' => array(
+            'driver'   => 'mongodb',
+            'host'     => 'hqopti1',
+            'port'     => 27017,
+            'database' => 'riskimo'
+        ),
+
 	),
 
 	/*
