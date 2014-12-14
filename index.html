@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>HTML5</title>
+        <title>Riskimo</title>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=650, user-scalable=yes">
         <!--[if IE]>
@@ -9,6 +9,7 @@
         <![endif]-->
         <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js"></script>
+        <script src="app.js"></script>
         <style>
             html, body {
                 height: 100%;
@@ -18,27 +19,6 @@
                 height:100%;
             }
         </style>
-
-        <script>
-            var map;
-            $(document).ready(function(){
-                var mapOptions = {
-                    zoom: 3,
-                    center: new google.maps.LatLng(43, 0),
-                    mapTypeId: google.maps.MapTypeId.TERRAIN
-                };
-                map=new google.maps.Map($('#mapcanvas')[0], mapOptions);
-
-                //*********************************************************************
-                // Add the layer showing the inventory
-                //*********************************************************************
-
-            });
-
-            $.get('url', function(response) {
-                console.log(response);
-            });
-        </script>
     </head>
     <body>
         <div id="mapcanvas"></div>
