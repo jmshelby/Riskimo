@@ -19,6 +19,17 @@ function setOutpost(position) {
     addOutpostsToMap();
 }
 
+function moveBattalion(position) {
+    /*$.get(riskimoUrl + 'move-battalion?latitude='
+        +position.lat()
+        +'&longitude='
+        +position.lng()
+        +'&username='+username,
+    function(response) {
+        console.log('Move Battalion', response);
+    });*/
+}
+
 function addOutpostsToMap() {
     $.get(riskimoUrl + 'bases?username=' + username,
     function(response) {
@@ -37,7 +48,6 @@ function addOutpostsToMap() {
 }
 
 function geocodePosition(pos) {
-    lastKnownPosition = pos;
     setOutpost(pos);
 
     /*geocoder.geocode({
@@ -62,40 +72,35 @@ function initialize(position) {
     var marker = new google.maps.Marker({
         position: latLng,
         title: 'Your Current Location',
-        map: map,
-        icon: 'http://img2.wikia.nocookie.net/__cb20140526212505/eyevea-archives/images/9/9a/AD_Outpost_Map_Icon.png'
+        map: map
     });
 
-    geocodePosition(latLng);
-
-    /*new google.maps.Marker({
+    var battalionMarker = new google.maps.Marker({
         position: latLng,
         title: 'Your Current Location',
         map: map,
         draggable: true,
-        icon: 'http://img2.wikia.nocookie.net/__cb20140526212505/eyevea-archives/images/9/9a/AD_Outpost_Map_Icon.png'
-    });*/
+        icon: 'https://cdn3.iconfinder.com/data/icons/buildings-places/512/Festival-128.png'
+    });
 
-/*
     // Update current position info.
-    updateMarkerPosition(latLng);
+    /*updateMarkerPosition(latLng);*/
     geocodePosition(latLng);
 
     // Add dragging event listeners.
-    google.maps.event.addListener(marker, 'dragstart', function() {
+    /*google.maps.event.addListener(battalionMarker, 'dragstart', function() {
         updateMarkerAddress('Dragging...');
+    });*/
+
+    google.maps.event.addListener(battalionMarker, 'drag', function() {
+        /*updateMarkerStatus('Dragging...');
+        updateMarkerPosition(battalionMarker.getPosition());*/
     });
 
-    google.maps.event.addListener(marker, 'drag', function() {
-        updateMarkerStatus('Dragging...');
-        updateMarkerPosition(marker.getPosition());
+    google.maps.event.addListener(battalionMarker, 'dragend', function() {
+        /*updateMarkerStatus('Drag ended');*/
+        moveBattalion(battalionMarker.getPosition());
     });
-
-    google.maps.event.addListener(marker, 'dragend', function() {
-        updateMarkerStatus('Drag ended');
-        geocodePosition(marker.getPosition());
-    });
-*/
 
     google.maps.event.addListener(map, 'rightclick', function(event) {
         marker.setPosition(event.latLng);
