@@ -104,6 +104,7 @@ return $this->getUserBattalionPosition($user);
 				'lat' => $marker->lat,
 				'long' => $marker->long,
 				'state' => 'awaiting',
+				'marker' => $this->_markerData($marker),
 			);
 		}
 
@@ -123,6 +124,8 @@ return $this->getUserBattalionPosition($user);
 			'lat' => $position->getLat(),
 			'long' => $position->getLng(),
 			'state' => 'traveling',
+			'seconds_remaining' => $totalTravelTime - $travelTime,
+			'marker' => $this->_markerData($marker),
 		);
 		// TODO -- how do figure out if they're resting or traveling
 	}
@@ -194,6 +197,20 @@ Geo::getEarthRadius();
 		$from	= new LatLng($aLat, $aLong);
 		$to		= new LatLng($bLat, $bLong);
 		return Geo::interpolate($from, $to, $percentage);
+	}
+
+	protected function _markerData(BattalionPosition $marker)
+	{
+		return (object) array(
+			'id' => $marker->id,
+			'origin_id' => $marker->origin_id,
+			'location' => array(
+				'latitude' => $marker->lat, 
+				'longitude' => $marker->long,
+			),
+			'arrival_time' => (string) $marker->arrival_time,
+			'departure_time' => (string) $marker->departure_time,
+		);
 	}
 
 }
