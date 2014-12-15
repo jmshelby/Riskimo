@@ -165,7 +165,7 @@ return 8; // About 17 mph for now (might be a little fast in the long run)
 		return 0.2;
 	}
 
-	protected function _calculateTimeOfArrival($aLat, $aLong, $bLat, $bLong)
+	protected function _calculateTimeOfArrival($aLat, $aLong, $bLat, $bLong, $scale = 50)
 	{
 		// calculate distance between current, and new
 		$distance = $this->_distanceBetween($aLat, $aLong, $bLat, $bLong);
@@ -175,7 +175,7 @@ return 8; // About 17 mph for now (might be a little fast in the long run)
 		// add sleep/rest time: d * restRate (some percentage of time needed to rest)
 		$weightedSeconds = $initialSeconds * ( $this->_getRestRate() + 1.0);
 		// TODO -- decrease factor so things are scaled as faster
-		$travelSeconds = $weightedSeconds;
+		$travelSeconds = $weightedSeconds / $scale;
 
 		// Return time from now, second later
 		return Carbon::now()->addSeconds($travelSeconds);
