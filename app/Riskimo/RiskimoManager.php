@@ -165,7 +165,7 @@ return 8; // About 17 mph for now (might be a little fast in the long run)
 		return 0.2;
 	}
 
-	protected function _calculateTimeOfArrival($aLat, $aLong, $bLat, $bLong, $scale = 50)
+	protected function _calculateTimeOfArrival($aLat, $aLong, $bLat, $bLong, $scale = 500)
 	{
 		// calculate distance between current, and new
 		$distance = $this->_distanceBetween($aLat, $aLong, $bLat, $bLong);
