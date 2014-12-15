@@ -44,6 +44,11 @@ class Base extends Moloquent
 		return $q->orderBy('created_at', 'desc');
 	}
 
+	public function scopeNewestEstablishedFirst($q)
+	{
+		return $q->orderBy('established_at', 'desc');
+	}
+
 	// == Accessors ==============================================================
 
 	public function establish($save = true)

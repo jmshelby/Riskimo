@@ -84,6 +84,14 @@ class Api
 		return $this->_riskimoMan->userEstablishesBase($user, $lat, $long);
 	}
 
+	public function userCommandsBattalionPosition()
+	{
+		$user = $this->getUser();
+		$lat = $this->getParamLatitude();
+		$long = $this->getParamLongitude();
+		return $this->_riskimoMan->userCommandsBattalionPosition($user, $lat, $long);
+	}
+
 // ===============================================
 
 	public function __call($method, $parameters)

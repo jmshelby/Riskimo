@@ -26,6 +26,7 @@ class WebserviceApiController extends Controller
 		return Response::json(array(
 			'status' => 'fail',
 			'statusText' => $e->getMessage(),
+'stackTrace' => $e->getTrace(),
 		));
 	}
 
@@ -157,6 +158,38 @@ class WebserviceApiController extends Controller
 		));
 	}
 
+	/**
+	 * Set or Change the destination of the user's battalion
+	 *
+	 * Params:
+	 *    - username
+	 *    - latitude
+	 *    - longitude
+	 */
+	public function anyMoveBattalion() {
+		try {
+			$currentPosition = $this->service->userCommandsBattalionPosition();
+		} catch (Exception $e) {
+			return $this->_response_exception($e);
+		}
+
+// TODO - make renderer
+return $this->_response_success($currentPosition);
+	}
+
+	/**
+	 * Get current position of battalion
+	 */
+	public function anyBattalionPosition() {
+		try {
+			$currentPosition = $this->service->getUserBattalionPosition();
+		} catch (Exception $e) {
+			return $this->_response_exception($e);
+		}
+
+// TODO - make renderer
+return $this->_response_success($currentPosition);
+	}
 
 
 	// ===== Formatters - Need new location for this ==========================
