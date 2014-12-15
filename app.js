@@ -1,5 +1,7 @@
 var geocoder = new google.maps.Geocoder();
 var map;
+var battalionMarker;
+var battalionTargetMarker;
 var lastKnownPosition;
 var markers = [];
 var heartbeat;
@@ -20,14 +22,24 @@ function setOutpost(position) {
 }
 
 function moveBattalion(position) {
-    /*$.get(riskimoUrl + 'move-battalion?latitude='
+    $.get(riskimoUrl + 'move-battalion?latitude='
         +position.lat()
         +'&longitude='
         +position.lng()
         +'&username='+username,
     function(response) {
         console.log('Move Battalion', response);
-    });*/
+    });
+}
+
+function updateBattalionPosition() {
+    $.get(riskimoUrl + 'battalion-position?username='+username,
+    function(response) {
+        console.log('Battalion Position', response);
+        var position = response.response;
+        battalionMarker.setPosition(new google.maps.LatLng(position.lat, position.long));
+        battalionTargetMarker.setPosition(new google.maps.LatLng(position.marker.location.latitude, position.marker.location.longitude));
+    });
 }
 
 function addOutpostsToMap() {
@@ -75,31 +87,38 @@ function initialize(position) {
         map: map
     });
 
-    var battalionMarker = new google.maps.Marker({
-        position: latLng,
-        title: 'Your Current Location',
+    battalionTargetMarker = new google.maps.Marker({
+        title: 'Battalion Target',
         map: map,
         draggable: true,
+        icon: 'http://c.dryicons.com/images/icon_sets/coquette_part_5_icons_set/png/128x128/target.png'
+    });
+
+    // TODO: start battalion marker at current battalion location
+    battalionMarker = new google.maps.Marker({
+        title: 'Battalion',
+        map: map,
         icon: 'https://cdn3.iconfinder.com/data/icons/buildings-places/512/Festival-128.png'
     });
 
     // Update current position info.
     /*updateMarkerPosition(latLng);*/
     geocodePosition(latLng);
+    updateBattalionPosition();
 
     // Add dragging event listeners.
-    /*google.maps.event.addListener(battalionMarker, 'dragstart', function() {
+    /*google.maps.event.addListener(battalionTargetMarker, 'dragstart', function() {
         updateMarkerAddress('Dragging...');
     });*/
 
-    google.maps.event.addListener(battalionMarker, 'drag', function() {
-        /*updateMarkerStatus('Dragging...');
-        updateMarkerPosition(battalionMarker.getPosition());*/
-    });
+    /*google.maps.event.addListener(battalionTargetMarker, 'drag', function() {
+        updateMarkerStatus('Dragging...');
+        updateMarkerPosition(battalionMarker.getPosition());
+    });*/
 
-    google.maps.event.addListener(battalionMarker, 'dragend', function() {
+    google.maps.event.addListener(battalionTargetMarker, 'dragend', function() {
         /*updateMarkerStatus('Drag ended');*/
-        moveBattalion(battalionMarker.getPosition());
+        moveBattalion(battalionTargetMarker.getPosition());
     });
 
     google.maps.event.addListener(map, 'rightclick', function(event) {
@@ -108,6 +127,7 @@ function initialize(position) {
     });
 
     /*heartbeat = setInterval(getMessages, 5000);*/
+    setInterval(updateBattalionPosition, 1000);
 }
 
 function initializeDefault() {
