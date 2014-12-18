@@ -46,8 +46,17 @@ function Player(username) {
             var position = response.response;
             self.battalionMarker.setPosition(new google.maps.LatLng(position.lat, position.long));
             self.battalionTargetMarker.setPosition(new google.maps.LatLng(position.marker.location.latitude, position.marker.location.longitude));
+
+            self.updateBattalionPath();
         });
     };
+
+    self.updateBattalionPath = function updateBattalionPath() {
+        self.battalionPath.setPath([
+            self.battalionMarker.getPosition(),
+            self.battalionTargetMarker.getPosition()
+        ]);
+    }
 
     self.addOutpostsToMap = function addOutpostsToMap() {
         /* I am not sure if outposts are a necessary or valuable part of the game
@@ -145,6 +154,14 @@ function Player(username) {
             }
         });
 
+        self.battalionPath = new google.maps.Polyline({
+            geodesic: true,
+            strokeColor: 'white',
+            strokeOpacity: 1.0,
+            strokeWeight: 1,
+            map: map
+        });
+
         // Update current position info.
         /*updateMarkerPosition(latLng);*/
         self.geocodePosition(latLng);
@@ -156,10 +173,9 @@ function Player(username) {
             updateMarkerAddress('Dragging...');
         });*/
 
-        /*google.maps.event.addListener(self.battalionTargetMarker, 'drag', function() {
-            updateMarkerStatus('Dragging...');
-            updateMarkerPosition(battalionMarker.getPosition());
-        });*/
+        google.maps.event.addListener(self.battalionTargetMarker, 'drag', function() {
+            self.updateBattalionPath();
+        });
 
         google.maps.event.addListener(self.battalionTargetMarker, 'dragend', function() {
             /*updateMarkerStatus('Drag ended');*/
