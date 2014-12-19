@@ -11,6 +11,7 @@ function Player(username) {
     self.lastKnownPosition;
     self.heartbeat;
     self.username = username;
+    self.isDragging = false;
 
     self.setOutpost = function setOutpost(position) {
         /* I am not sure if outposts are a necessary or valuable part of the game
@@ -45,7 +46,10 @@ function Player(username) {
             console.log('Battalion Position', response);
             var position = response.response;
             self.battalionMarker.setPosition(new google.maps.LatLng(position.lat, position.long));
-            self.battalionTargetMarker.setPosition(new google.maps.LatLng(position.marker.location.latitude, position.marker.location.longitude));
+
+            if (!self.isDragging) {
+                self.battalionTargetMarker.setPosition(new google.maps.LatLng(position.marker.location.latitude, position.marker.location.longitude));
+            }
 
             self.updateBattalionPath();
         });
@@ -168,17 +172,26 @@ function Player(username) {
         self.updateBattalionPosition();
         self.updateZoom(map.getZoom());
 
+        // Info window for battalions
+        self.infowindow = new google.maps.InfoWindow({
+            content: '<a href="javascript:alert(\'TODO: provide interaction options: Attack, Invite to Team, Chat, etc\')">'+self.username+'</a>'
+        });
+        self.infowindow.open(map, self.battalionMarker);
+        google.maps.event.addListener(self.battalionMarker, 'click', function() {
+            self.infowindow.open(map, self.battalionMarker);
+        });
+
         // Add dragging event listeners.
-        /*google.maps.event.addListener(self.battalionTargetMarker, 'dragstart', function() {
-            updateMarkerAddress('Dragging...');
-        });*/
+        google.maps.event.addListener(self.battalionTargetMarker, 'dragstart', function() {
+            self.isDragging = true;
+        });
 
         google.maps.event.addListener(self.battalionTargetMarker, 'drag', function() {
             self.updateBattalionPath();
         });
 
         google.maps.event.addListener(self.battalionTargetMarker, 'dragend', function() {
-            /*updateMarkerStatus('Drag ended');*/
+            self.isDragging = false;
             self.moveBattalion(self.battalionTargetMarker.getPosition());
         });
 
