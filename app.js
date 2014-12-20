@@ -113,6 +113,7 @@ function Player(username) {
     };
 
     self.initialize = function initialize(position) {
+        console.log('Initializing UI');
         var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
         if (!map) {
             map = new google.maps.Map(document.getElementById('mapcanvas'), {
@@ -209,6 +210,7 @@ function Player(username) {
     };
 
     self.initializeDefault = function initializeDefault() {
+        console.log('No geolocation available.  Using Denver, USA as default location.')
         var defaultPosition = {
             coords: {
                 latitude: 39.739341754525086,
@@ -220,6 +222,7 @@ function Player(username) {
     };
 
     self.loadGeolocation = function loadGeolocation() {
+        console.log('Retrieving Geolocation');
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(self.initialize, self.initializeDefault);
         } else {
@@ -228,10 +231,7 @@ function Player(username) {
         }
     };
 
-    // Onload handler to fire off the app.
-    google.maps.event.addDomListener(window, 'load', self.loadGeolocation);
-
+    console.log('Signing In', '"'.self.username.'"');
+    self.loadGeolocation();
 }
 
-new Player('Test');
-new Player('jake');

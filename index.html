@@ -14,13 +14,53 @@
             html, body {
                 height: 100%;
                 margin: 0;
+                font-size: 15px;
+                font-family: ;
             }
             #mapcanvas{
                 height:100%;
             }
+            form {
+                position: absolute;
+                width: 100%;
+                margin-top: 50vh;
+                padding: 5px;
+                background: #eee;
+                border-bottom: 1px solid #ddd;
+                border-top: 1px solid #ddd;
+                text-align: center;
+            }
+            input, button {
+                font-size: 20px;
+                border: 1px solid #eee;
+                padding: 3px 8px;
+                background: #fff;
+                border-radius: 7px;
+
+                -webkit-appearance: none;  /* Remove default shadow */
+            }
+            button {
+                color: #888;
+                background: #ddd;
+            }
         </style>
     </head>
     <body>
-        <div id="mapcanvas"></div>
+        <div id="mapcanvas">
+            <form onSubmit="return loadGame();">
+                <input type="text" id="username"/>
+                <input type="submit" value="Play Riskimo!"/>
+            </form>
+        </div>
+        <script type="text/javascript">
+            var input = document.getElementById('username');
+            input.focus();
+
+            function loadGame() {
+                input.disabled = true;
+                new Player(input.value);
+                return false;
+            }
+        </script>
     </body>
 </html>
