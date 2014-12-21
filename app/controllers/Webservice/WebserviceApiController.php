@@ -26,7 +26,7 @@ class WebserviceApiController extends Controller
 		return Response::json(array(
 			'status' => 'fail',
 			'statusText' => $e->getMessage(),
-'stackTrace' => $e->getTrace(),
+			'stackTrace' => $e->getTrace(),
 		));
 	}
 
@@ -112,6 +112,42 @@ class WebserviceApiController extends Controller
 		return $this->_response_error("Not implemented yet");
 	}
 
+	public function getBoard()
+	{
+		// Return the overview of the board
+		//
+		//   - Current Player's ID
+		//
+		//   - UnitGroups
+		//     - group id (key)
+		//       - location
+		//       - status (waiting; moving)
+		//       - units (number of)
+		//       - player id
+		//
+		try {
+			// TODO -- abstract this out sometime
+			$user = null;
+			if (Input::has('username')) {
+				$username = Input::get('username');
+				$user = $this->service->getUser();
+			}
+
+			$groups = $this->service->fetchGroups();
+		} catch (Exception $e) {
+			return $this->_response_exception($e);
+		}
+		// TODO - make renderer
+		$response = array(
+			'groups' => $groups,
+			// 'forts' => $forts,
+		);
+
+		if ($user) $response['user'] = $this->_formatUser($user);
+
+		return $this->_response_success($response);
+	}
+
 	public function getBases() {
 		try {
 			$bases = $this->service->getUserBases();
@@ -159,16 +195,16 @@ class WebserviceApiController extends Controller
 	}
 
 	/**
-	 * Set or Change the destination of the user's battalion
+	 * Set or Change the destination of the user's group
 	 *
 	 * Params:
 	 *    - username
 	 *    - latitude
 	 *    - longitude
 	 */
-	public function anyMoveBattalion() {
+	public function anyMoveGroup() {
 		try {
-			$currentPosition = $this->service->userCommandsBattalionPosition();
+			$currentPosition = $this->service->userCommandsGroupPosition();
 		} catch (Exception $e) {
 			return $this->_response_exception($e);
 		}
@@ -178,11 +214,11 @@ return $this->_response_success($currentPosition);
 	}
 
 	/**
-	 * Get current position of battalion
+	 * Get current position of group
 	 */
-	public function anyBattalionPosition() {
+	public function anyGroupPosition() {
 		try {
-			$currentPosition = $this->service->getUserBattalionPosition();
+			$currentPosition = $this->service->getUserGroupPosition();
 		} catch (Exception $e) {
 			return $this->_response_exception($e);
 		}

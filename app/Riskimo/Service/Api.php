@@ -84,12 +84,17 @@ class Api
 		return $this->_riskimoMan->userEstablishesBase($user, $lat, $long);
 	}
 
-	public function userCommandsBattalionPosition()
+	public function userCommandsGroupPosition()
 	{
 		$user = $this->getUser();
 		$lat = $this->getParamLatitude();
 		$long = $this->getParamLongitude();
-		return $this->_riskimoMan->userCommandsBattalionPosition($user, $lat, $long);
+		return $this->_riskimoMan->userCommandsGroupPosition($user, $lat, $long);
+	}
+
+	public function fetchGroups()
+	{
+		return $this->_riskimoMan->fetchGroups();
 	}
 
 // ===============================================
@@ -98,6 +103,7 @@ class Api
 	{
 		// Forward to proximo manager, with player as first param
 		$callback = array($this->_riskimoMan, $method);
+		// TODO - only add user object param if the function starts with "user" ??
 		array_unshift($parameters, $this->getUser());
 		return call_user_func_array(
 			$callback,

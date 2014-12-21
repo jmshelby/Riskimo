@@ -2,7 +2,8 @@
 
 use User;
 use Base;
-use BattalionPosition;
+use Group;
+use GroupPosition;
 
 use Carbon\Carbon;
 
@@ -42,40 +43,54 @@ class RiskimoManager
 		return $base;
 	}
 
-
-	public function userGrowsTroops(User $user)
+	public function getUsersLastEstablishedBase(User $user)
 	{
-		// Add on troop point to user
-		$points = $user->addTroopPoints();
-
-		// Check if user has enough points for a new trooper
-		if ($points > 5) {
-			$user->addTroops();
-			$user->resetTroopPoints();
+		$lastBase = $user->bases()->newestEstablishedFirst()->first();
+		if (!$lastBase) {
+// TODO -- figure out the best way to initialize a base
+$lastBase = $this->userEstablishesBase($user, 45.78, -104.03);
 		}
+		return $lastBase;
+	}
 
-		// TODO -- move above logic for checking trooper adding
-		// TODO -- make logic more dynamic for point threshold
+	public function userGrowsUnits(User $user)
+	{
+		return $user->group->addUnits();
 	}
 
 	public function getUserBases(User $user) {
 		return $user->bases()->newestEstablishedFirst()->get();
 	}
 
-	// ==== Battalion Stuff ==========================================
+	// ==== Group Stuff ==========================================
 
-	// Command the battalion to start traveling to a position
-	public function userCommandsBattalionPosition(User $user, $lat, $long)
+	public function fetchGroups()
+	{
+		// TODO -- add bounding box for viewport query
+		// TODO -- should we filter anything out here?
+		$groups = Group::all();
+		// TODO -- is there a way to make this call faster?
+		foreach($groups as $group) {
+			$positionData = $this->getGroupPosition($group);
+			$group->setCurrentGroupPosition($positionData);
+// Load user for consumer view TODO - remove
+$group->user;
+		}
+		return $groups;
+	}
+
+	// Command the group to start traveling to a position
+	public function userCommandsGroupPosition(User $user, $lat, $long)
 	{
 		// get most recent position(model); where status == active
-		$marker = $this->_getLastPosition($user);
+		$marker = $this->_getLastPosition($user->group);
 
 		// if time of arrival is after now:
 		if (!$marker->hasArrived()) {
 			// calc current position (using func below)
-			$calcPos = $this->getUserBattalionPosition($user);
+			$calcPos = $this->getUserGroupPosition($user);
 			// create marker for now at position
-			$newMarker = BattalionPosition::createMarker($user, $calcPos->lat, $calcPos->long, $marker->origin, $marker->departure_time);
+			$newMarker = GroupPosition::createMarker($user->group, $calcPos->lat, $calcPos->long, $marker->origin, $marker->departure_time);
 			// disable/inactivate current position(model)
 			$marker->abandon();
 			// use the new marker now
@@ -85,24 +100,29 @@ class RiskimoManager
 		// calculate time of arrival from now
 		$arrivalTime = $this->_calculateTimeOfArrival($marker->lat, $marker->long, $lat, $long);
 
-		$newMarker = BattalionPosition::createMarker($user, $lat, $long, $marker, null, $arrivalTime);
+		$newMarker = GroupPosition::createMarker($user->group, $lat, $long, $marker, null, $arrivalTime);
 
-return $this->getUserBattalionPosition($user);
+return $this->getUserGroupPosition($user);
 // TODO -- return more stats
 	}
 
-	public function getUserBattalionPosition(User $user)
+	public function getUserGroupPosition(User $user)
+	{
+		return $this->getGroupPosition($user->group);
+	}
+
+	public function getGroupPosition(Group $group)
 	{
 		// get most recent position(model); where status == active
-		$marker = $this->_getLastPosition($user);
+		$marker = $this->_getLastPosition($group);
 
 		// if time of arrival is before now:
 		if ($marker->hasArrived()) {
 			// return position; state = awaiting
 // TODO -- return more stats
 			return (object) array(
-				'lat' => $marker->lat,
-				'long' => $marker->long,
+				'latitude' => $marker->lat,
+				'longitude' => $marker->long,
 				'state' => 'awaiting',
 				'marker' => $this->_markerData($marker),
 			);
@@ -114,15 +134,15 @@ return $this->getUserBattalionPosition($user);
 		// get seconds between departure & now
 		$travelTime = $marker->departure_time->diffInSeconds(Carbon::now());
 		// get percent of completion (traveled time / travel time)
-		$percent = $travelTime / $totalTravelTime;
+		$percent = ($totalTravelTime == 0) ? 1 : $travelTime / $totalTravelTime;
 		// get interpolation, position percentage between marker and origin
 		$position = $this->_interpolationBetween($marker->origin->lat, $marker->origin->long, $marker->lat, $marker->long, $percent);
 
 		// return position; state = traveling/resting 
 // TODO -- return more stats
 		return (object) array(
-			'lat' => $position->getLat(),
-			'long' => $position->getLng(),
+			'latitude' => $position->getLat(),
+			'longitude' => $position->getLng(),
 			'state' => 'traveling',
 			'seconds_remaining' => $totalTravelTime - $travelTime,
 			'marker' => $this->_markerData($marker),
@@ -130,17 +150,17 @@ return $this->getUserBattalionPosition($user);
 		// TODO -- how do figure out if they're resting or traveling
 	}
 
-	protected function _getLastPosition(User $user)
+	protected function _getLastPosition(Group $group)
 	{
 		// get most recent position(model); where status == active
-		$marker = BattalionPosition::getLastPosition($user);
+		$marker = GroupPosition::getLastPosition($group);
 
 		// Make sure there is a marker
 		if (!$marker) {
 			// Get last base established
-			$lastBase = $user->bases()->newestEstablishedFirst()->first();
+			$lastBase = $this->getUsersLastEstablishedBase($group->user);
 			// Create new marker with position of last base
-			$marker = BattalionPosition::createMarker($user, $lastBase->lat, $lastBase->long, null);
+			$marker = GroupPosition::createMarker($group, $lastBase->lat, $lastBase->long, null);
 			// TODO -- should the marker be created with a date from the base? or now?
 		}
 
@@ -149,7 +169,7 @@ return $this->getUserBattalionPosition($user);
 
 	// ====================================================================
 
-	// How long does it take on average for the battalion to move
+	// How long does it take on average for the group to move
 	protected function _getTravelRate() {
 		// meters per second
 		// 1 m/s:
@@ -159,7 +179,7 @@ return 8; // About 17 mph for now (might be a little fast in the long run)
 		return 2;
 	}
 
-	// What percentage of the time does a battalion need to rest while traveling
+	// What percentage of the time does a group need to rest while traveling
 	protected function _getRestRate() {
 		// Should we do something more realistic
 		return 0.2;
@@ -184,7 +204,7 @@ return 8; // About 17 mph for now (might be a little fast in the long run)
 	// Distance between two points in meters
 	protected function _distanceBetween($aLat, $aLong, $bLat, $bLong)
 	{
-Geo::getEarthRadius();
+Geo::getEarthRadius(); // for autoload
 		$from	= new LatLng($aLat, $aLong);
 		$to		= new LatLng($bLat, $bLong);
 		return Geo::computeDistanceBetween($from, $to);
@@ -193,13 +213,13 @@ Geo::getEarthRadius();
 	// Position percentage between marker and origin
 	protected function _interpolationBetween($aLat, $aLong, $bLat, $bLong, $percentage)
 	{
-Geo::getEarthRadius();
+Geo::getEarthRadius(); // for autoload
 		$from	= new LatLng($aLat, $aLong);
 		$to		= new LatLng($bLat, $bLong);
 		return Geo::interpolate($from, $to, $percentage);
 	}
 
-	protected function _markerData(BattalionPosition $marker)
+	protected function _markerData(GroupPosition $marker)
 	{
 		return (object) array(
 			'id' => $marker->id,

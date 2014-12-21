@@ -4,10 +4,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Riskimo\Mongodb\Eloquent\GeospatialTrait;
 
 /**
- * Tracks the positions that a user's battalion has traveled to or planned to travel to
+ * Tracks the positions that a user's group has traveled to or planned to travel to
  *
  * Fields:
- *   -user_id
+ *   -group_id
  *   -origin_id
  *   -pos
  *   -arrival_time
@@ -15,23 +15,23 @@ use Riskimo\Mongodb\Eloquent\GeospatialTrait;
  *   -abandoned_fl
  *   -distance_from_origin?
  */
-class BattalionPosition extends Moloquent
+class GroupPosition extends Moloquent
 {
 
 	use CoordinateTrait;
 	use GeospatialTrait;
 
-	protected $table = 'battalion_position';
+	protected $table = 'group_position';
 
 	protected $dates = array('arrival_time', 'departure_time');
 
 	// == Factories ==============================================================
 
-	public static function createMarker(User $user, $lat, $long, BattalionPosition $origin = null, $departTime = null, $arrivalTime = null)
+	public static function createMarker(Group $group, $lat, $long, GroupPosition $origin = null, $departTime = null, $arrivalTime = null)
 	{
 		$marker = new static;
 
-		$marker->user()->associate($user);
+		$marker->group()->associate($group);
 
 		$marker->lat = $lat;
 		$marker->long = $long;
@@ -58,14 +58,20 @@ class BattalionPosition extends Moloquent
 
 	// == Relationships ==========================================================
 
+	public function group()
+	{
+		return $this->belongsTo('Group');
+	}
+
 	public function user()
 	{
-		return $this->belongsTo('User');
+		// belongs to User through group (I don't think this relationship exists yet)
+		//return $this->belongsTo('User');
 	}
 
 	public function origin()
 	{
-		return $this->belongsTo('BattalionPosition');
+		return $this->belongsTo('GroupPosition');
 	}
 
 	// == Event ==================================================================
@@ -95,9 +101,9 @@ class BattalionPosition extends Moloquent
 		return $q->where('abandoned_fl', false);
 	}
 
-	public function scopeForUser($q, User $user)
+	public function scopeForGroup($q, Group $group)
 	{
-		return $q->where('user_id', $user->id);
+		return $q->where('group_id', $group->id);
 	}
 
 	// == Accessors ==============================================================
@@ -109,7 +115,7 @@ class BattalionPosition extends Moloquent
 			$currentTime = Carbon\Carbon::now();
 		}
 
-		return $this->arrival_time->lt($currentTime);
+		return $this->arrival_time->lte($currentTime);
 	}
 
 	public function abandon($save = true)
@@ -122,8 +128,8 @@ class BattalionPosition extends Moloquent
 		return $this;
 	}
 
-	public static function getLastPosition(User $user) {
-		return static::forUser($user)->active()->lastArrivalFirst()->first();
+	public static function getLastPosition(Group $group) {
+		return static::forGroup($group)->active()->lastArrivalFirst()->first();
 	}
 
 }

@@ -5,6 +5,8 @@ use Illuminate\Auth\UserInterface;
 use Illuminate\Auth\Reminders\RemindableTrait;
 use Illuminate\Auth\Reminders\RemindableInterface;
 
+use Illuminate\Database\Eloquent\Builder;
+
 class User extends Moloquent implements UserInterface, RemindableInterface {
 
 	use UserTrait, RemindableTrait;
@@ -30,6 +32,12 @@ class User extends Moloquent implements UserInterface, RemindableInterface {
 		return $this->hasMany('Base');
 	}
 
+	public function group()
+	{
+		return $this->hasOne('Group');
+	}
+
+	/*
 	public function addTroopPoints($points = 1)
 	{
 		$result = $this->increment('troop_points', $points);
