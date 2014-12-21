@@ -7,8 +7,8 @@ riskimo.api = new function Api() {
     var self = this;
     var apiUrl = 'http://riskimo.mooo.com/webservice/';
 
-    self.moveUnitGroup = function moveUnitGroup(position, callback) {
-        $.get(apiUrl + 'move-group?username='+riskimo.player.username
+    self.moveUnitGroup = function moveUnitGroup(username, position, callback) {
+        $.get(apiUrl + 'move-group?username='+username
             +'&latitude='
             +position.lat()
             +'&longitude='
@@ -28,9 +28,9 @@ riskimo.api = new function Api() {
     };
 
     self.poll = function poll(callback) {
-        $.get(apiUrl + 'group-position?username='+riskimo.player.username,
+        $.get(apiUrl + 'board?username='+riskimo.player.username,
         function(response) {
-            console.log('UnitGroup Position', response);
+            console.log('Playing Board', response);
             if (callback) callback(response.response);
         });
     }
@@ -84,8 +84,11 @@ riskimo.Unit = function Unit() {
     // Nothing to do here unless individual units become part of the UI
 }
 
-riskimo.UnitGroup = function UnitGroup() {
+riskimo.UnitGroup = function UnitGroup(data) {
     var self = this;
+    var player;
+    var isDragging;
+    var infowindow;
 
     var groupMarker = new google.maps.Marker({
         title: 'Group',
@@ -129,14 +132,19 @@ riskimo.UnitGroup = function UnitGroup() {
     }
 
     self.update = function update(data) {
-        groupMarker.setPosition(new google.maps.LatLng(data.lat, data.long));
+        groupMarker.setPosition(new google.maps.LatLng(data.current_position.latitude, data.current_position.longitude));
 
-        if (!self.isDragging) {
-            targetMarker.setPosition(new google.maps.LatLng(data.marker.location.latitude, data.marker.location.longitude));
+        if (!isDragging) {
+            var target = data.current_position.marker;
+            targetMarker.setPosition(new google.maps.LatLng(target.location.latitude, target.location.longitude));
         }
 
         updatePath();
     }
+
+    player = new riskimo.Player(data.user.username);
+
+    self.update(data);
 
     riskimo.icons.zoom(groupMarker);
 
@@ -145,18 +153,18 @@ riskimo.UnitGroup = function UnitGroup() {
     });
 
     // Info window for groups
-    self.infowindow = new google.maps.InfoWindow({
-        content: '<a href="javascript:alert(\'TODO: provide interaction options: Attack, Invite to Team, Chat, etc\')">'+riskimo.player.username+'</a>'
+    var infowindow = new google.maps.InfoWindow({
+        content: '<a href="javascript:alert(\'TODO: provide interaction options: Attack, Invite to Team, Chat, etc\')">'+player.username+'</a>'
     });
-    self.infowindow.open(map, groupMarker);
+    infowindow.open(map, groupMarker);
 
     google.maps.event.addListener(groupMarker, 'click', function() {
-        self.infowindow.open(map, groupMarker);
+        infowindow.open(map, groupMarker);
     });
 
     // Add dragging event listeners.
-    google.maps.event.addListener(groupMarker, 'dragstart', function() {
-        self.isDragging = true;
+    google.maps.event.addListener(targetMarker, 'dragstart', function() {
+        isDragging = true;
     });
 
     google.maps.event.addListener(targetMarker, 'drag', function() {
@@ -164,9 +172,10 @@ riskimo.UnitGroup = function UnitGroup() {
     });
 
     google.maps.event.addListener(targetMarker, 'dragend', function() {
-        self.isDragging = false;
-        riskimo.api.moveUnitGroup(targetMarker.getPosition());
+        isDragging = false;
+        riskimo.api.moveUnitGroup(player.username, targetMarker.getPosition());
     });
+
 }
 
 riskimo.Fort = function Fort() {
@@ -178,14 +187,21 @@ function Game(username) {
 
     riskimo.player = new riskimo.Player(username);
 
-    self.group;
+    self.groups = {};
     self.heartbeat;
     self.username = username;
-    self.isDragging = false;
 
     var poll = function poll() {
         riskimo.api.poll(function(data) {
-            self.group.update(data);
+            for (var i in data.groups) {
+                var group = data.groups[i];
+
+                if (!self.groups[group._id]) {
+                    self.groups[group._id] = new riskimo.UnitGroup(group);
+                } else {
+                    self.groups[group._id].update(group);
+                }
+            }
         });
     };
 
@@ -201,7 +217,6 @@ function Game(username) {
         }
 
         riskimo.player.setPosition(latLng);
-        self.group = new riskimo.UnitGroup();
 
         // Update current game info
         poll();
