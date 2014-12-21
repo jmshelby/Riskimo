@@ -90,7 +90,7 @@ $group->user;
 			// calc current position (using func below)
 			$calcPos = $this->getUserGroupPosition($user);
 			// create marker for now at position
-			$newMarker = GroupPosition::createMarker($user->group, $calcPos->lat, $calcPos->long, $marker->origin, $marker->departure_time);
+			$newMarker = GroupPosition::createMarker($user->group, $calcPos->latitude, $calcPos->longitude, $marker->origin, $marker->departure_time);
 			// disable/inactivate current position(model)
 			$marker->abandon();
 			// use the new marker now
