@@ -214,6 +214,11 @@ function Game(username) {
                 center: latLng,
                 mapTypeId: google.maps.MapTypeId.SATELLITE
             });
+
+            new DayNightOverlay({
+                map: map,
+                fillColor: 'rgba(0,0,0,0.3)'
+            });
         }
 
         riskimo.player.setPosition(latLng);
