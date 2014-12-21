@@ -50,20 +50,18 @@ class User extends Moloquent implements UserInterface, RemindableInterface {
 		$this->troop_points = $points;
 		return $this->save();
 	}
+	 */
 
+	// == Event ==================================================================
 
-
-	public function addTroops($troops = 1)
+	protected function performInsert(Builder $query, array $options)
 	{
-		$result = $this->increment('troops', $troops);
-		// TODO if result isn't 1, throw exception ? return false?
-		return $this->troops;
-	}
+		$result = parent::performInsert($query, $options);
 
-	public function resetTroops($points = 0)
-	{
-		$this->troops = $points;
-		return $this->save();
+		// Create a group record for the User
+		Group::createGroup($this);
+
+		return $result;
 	}
 
 }

@@ -177,20 +177,18 @@ class WebserviceApiController extends Controller
 		return $this->_response_success($this->_formatBase($base));
 	}
 
-	public function anyGrowTroops()
+	public function anyAddUnit()
 	{
 		// Call to increment points/resources that go towards building up your troops
 
 		try {
-			$user = $this->service->getUser();
-			$this->service->userGrowsTroops();
+			$count = $this->service->userGrowsUnits();
 		} catch (Exception $e) {
 			return $this->_response_exception($e);
 		}
 
 		return $this->_response_success(array(
-			'points' => $user->troop_points,
-			'troops' => $user->troops,
+			'units' => $count,
 		));
 	}
 
