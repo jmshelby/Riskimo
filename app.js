@@ -1,115 +1,192 @@
 var geocoder = new google.maps.Geocoder();
 var map;
-var riskimoUrl = 'http://riskimo.mooo.com/webservice/';
 
-function Player(username) {
+var riskimo = new function Riskimo() {}
+
+riskimo.api = new function Api() {
+    var self = this;
+    var apiUrl = 'http://riskimo.mooo.com/webservice/';
+
+    self.moveUnitGroup = function moveUnitGroup(position, callback) {
+        $.get(apiUrl + 'move-battalion?username='+riskimo.player.username
+            +'&latitude='
+            +position.lat()
+            +'&longitude='
+            +position.lng(),
+        function(response) {
+            console.log('Unit Group Moved', response);
+            if (callback) callback(response.response);
+        });
+    };
+
+    self.addUnit = function addUnit(callback) {
+        $.get(apiUrl + 'add-unit?username='+riskimo.player.username,
+        function(response) {
+            console.log('Unit Added', response);
+            if (callback) callback(response.response);
+        });
+    };
+
+    self.poll = function poll(callback) {
+        $.get(apiUrl + 'battalion-position?username='+riskimo.player.username,
+        function(response) {
+            console.log('Battalion Position', response);
+            if (callback) callback(response.response);
+        });
+    }
+}
+
+riskimo.icons = new function Icons() {
     var self = this;
 
-    self.currentMarker;
-    self.battalionMarker;
-    self.battalionTargetMarker;
-    self.lastKnownPosition;
+    self.zoom = function zoom(marker) {
+        var zoom = map.getZoom();
+        var scale = zoom * zoom;
+
+        marker.getIcon().scaledSize
+            = marker.getIcon().size
+            = new google.maps.Size(scale, scale);
+        marker.getIcon().anchor = new google.maps.Point(scale/2, scale/2);
+        marker.setZIndex(marker.setZIndex()); // force icon redraw
+    }
+}
+
+riskimo.Player = function Player(username) {
+    var self = this;
+    var marker;
+
+    self.username = username;
+
+    self.setPosition = function setPosition(position) {
+        if (!marker) {
+            marker = new google.maps.Marker({
+                title: 'Your Current Location',
+                map: map,
+                icon: {
+                    url: 'https://cdn3.iconfinder.com/data/icons/buildings-places/512/Festival-128.png'
+                }
+            });
+
+            riskimo.icons.zoom(marker);
+
+            google.maps.event.addListener(map, 'zoom_changed', function() {
+                riskimo.icons.zoom(marker);
+            });
+        }
+
+        marker.setPosition(position);
+    }
+
+    console.log('Player Instantiated', '"'+username+'"', self.marker);
+}
+
+riskimo.Unit = function Unit() {
+    // Nothing to do here unless individual units become part of the UI
+}
+
+riskimo.UnitGroup = function UnitGroup() {
+    var self = this;
+
+    var groupMarker = new google.maps.Marker({
+        title: 'Battalion',
+        map: map,
+        zIndex: 10,
+        icon: {
+            url: 'http://icons.iconarchive.com/icons/3xhumed/mega-games-pack-23/128/Americas-Army-4-icon.png'
+        }
+    });
+
+    var targetMarker = new google.maps.Marker({
+        title: 'Battalion Target',
+        map: map,
+        zIndex: -1,
+        draggable: true,
+        crossOnDrag: false,
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            strokeColor: 'white',
+            strokeWeight: 3,
+            strokeOpacity: 0.6,
+            fillColor: 'white',
+            fillOpacity: 0.2,
+            scale: 30
+        }
+    });
+
+    var targetPath = new google.maps.Polyline({
+        geodesic: true,
+        strokeColor: 'white',
+        strokeOpacity: 1.0,
+        strokeWeight: 1,
+        map: map
+    });
+
+    function updatePath() {
+        targetPath.setPath([
+            groupMarker.getPosition(),
+            targetMarker.getPosition()
+        ]);
+    }
+
+    self.update = function update(data) {
+        groupMarker.setPosition(new google.maps.LatLng(data.lat, data.long));
+
+        if (!self.isDragging) {
+            targetMarker.setPosition(new google.maps.LatLng(data.marker.location.latitude, data.marker.location.longitude));
+        }
+
+        updatePath();
+    }
+
+    riskimo.icons.zoom(groupMarker);
+
+    google.maps.event.addListener(map, 'zoom_changed', function() {
+        riskimo.icons.zoom(groupMarker);
+    });
+
+    // Info window for battalions
+    self.infowindow = new google.maps.InfoWindow({
+        content: '<a href="javascript:alert(\'TODO: provide interaction options: Attack, Invite to Team, Chat, etc\')">'+riskimo.player.username+'</a>'
+    });
+    self.infowindow.open(map, groupMarker);
+
+    google.maps.event.addListener(groupMarker, 'click', function() {
+        self.infowindow.open(map, groupMarker);
+    });
+
+    // Add dragging event listeners.
+    google.maps.event.addListener(groupMarker, 'dragstart', function() {
+        self.isDragging = true;
+    });
+
+    google.maps.event.addListener(targetMarker, 'drag', function() {
+        updatePath();
+    });
+
+    google.maps.event.addListener(targetMarker, 'dragend', function() {
+        self.isDragging = false;
+        riskimo.api.moveUnitGroup(targetMarker.getPosition());
+    });
+}
+
+riskimo.Fort = function Fort() {
+
+}
+
+function Game(username) {
+    var self = this;
+
+    riskimo.player = new riskimo.Player(username);
+
+    self.group;
     self.heartbeat;
     self.username = username;
     self.isDragging = false;
 
-    self.setOutpost = function setOutpost(position) {
-        /* I am not sure if outposts are a necessary or valuable part of the game
-           Let's try without them!
-
-        $.get(riskimoUrl + 'establish-base?latitude='
-            +position.lat()
-            +'&longitude='
-            +position.lng()
-            +'&username='+self.username,
-        function(response) {
-            console.log('Establish Base', response);
+    var poll = function poll() {
+        riskimo.api.poll(function(data) {
+            self.group.update(data);
         });
-
-        self.addOutpostsToMap();*/
-    };
-
-    self.moveBattalion = function moveBattalion(position) {
-        $.get(riskimoUrl + 'move-battalion?latitude='
-            +position.lat()
-            +'&longitude='
-            +position.lng()
-            +'&username='+self.username,
-        function(response) {
-            console.log('Move Battalion', response);
-        });
-    };
-
-    self.updateBattalionPosition = function updateBattalionPosition() {
-        $.get(riskimoUrl + 'battalion-position?username='+self.username,
-        function(response) {
-            console.log('Battalion Position', response);
-            var position = response.response;
-            self.battalionMarker.setPosition(new google.maps.LatLng(position.lat, position.long));
-
-            if (!self.isDragging) {
-                self.battalionTargetMarker.setPosition(new google.maps.LatLng(position.marker.location.latitude, position.marker.location.longitude));
-            }
-
-            self.updateBattalionPath();
-        });
-    };
-
-    self.updateBattalionPath = function updateBattalionPath() {
-        self.battalionPath.setPath([
-            self.battalionMarker.getPosition(),
-            self.battalionTargetMarker.getPosition()
-        ]);
-    }
-
-    self.addOutpostsToMap = function addOutpostsToMap() {
-        /* I am not sure if outposts are a necessary or valuable part of the game
-           Let's try without them!
-
-        $.get(riskimoUrl + 'bases?username=' + self.username,
-        function(response) {
-            console.log('Bases', response);
-            var bases = response.response;
-            for(var i in bases) {
-                var base = bases[i];
-                new google.maps.Marker({
-                    position: new google.maps.LatLng(base.location.latitude, base.location.longitude),
-                    title: 'Base',
-                    map: map,
-                    icon: 'http://img2.wikia.nocookie.net/__cb20140526212505/eyevea-archives/images/9/9a/AD_Outpost_Map_Icon.png'
-                });
-            }
-        });*/
-    };
-
-    self.geocodePosition = function geocodePosition(pos) {
-        /* I am not sure if outposts are a necessary or valuable part of the game
-           Let's try without them!
-
-        self.setOutpost(pos);*/
-
-        /*geocoder.geocode({
-            latLng: pos
-        }, function(responses) {
-            if (responses && responses.length > 0) {
-                updateMarkerAddress(responses[0].formatted_address);
-            } else {
-                updateMarkerAddress('Cannot determine address at this location.');
-            }
-        });*/
-    };
-
-    self.updateZoom = function updateZoom(zoomScale) {
-        var scale = map.getZoom() * map.getZoom();
-        var markers = [self.currentMarker, self.battalionMarker];
-
-        for (var i in markers) {
-            markers[i].getIcon().scaledSize
-                = markers[i].getIcon().size
-                = new google.maps.Size(scale, scale);
-            markers[i].getIcon().anchor = new google.maps.Point(scale/2, scale/2);
-            markers[i].setZIndex(markers[i].setZIndex()); // force icon redraw
-        }
     };
 
     self.initialize = function initialize(position) {
@@ -123,90 +200,12 @@ function Player(username) {
             });
         }
 
-        self.currentMarker = new google.maps.Marker({
-            position: latLng,
-            title: 'Your Current Location',
-            map: map,
-            icon: {
-                url: 'https://cdn3.iconfinder.com/data/icons/buildings-places/512/Festival-128.png'
-            }
-        });
+        riskimo.player.setPosition(latLng);
+        self.group = new riskimo.UnitGroup();
 
-        // TODO: start battalion marker at current battalion location
-        self.battalionMarker = new google.maps.Marker({
-            title: 'Battalion',
-            map: map,
-            zIndex: 10,
-            icon: {
-                url: 'http://icons.iconarchive.com/icons/3xhumed/mega-games-pack-23/128/Americas-Army-4-icon.png'
-            }
-        });
-
-        self.battalionTargetMarker = new google.maps.Marker({
-            title: 'Battalion Target',
-            map: map,
-            zIndex: -1,
-            draggable: true,
-            crossOnDrag: false,
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                strokeColor: 'white',
-                strokeWeight: 3,
-                strokeOpacity: 0.6,
-                fillColor: 'white',
-                fillOpacity: 0.2,
-                scale: 30
-            }
-        });
-
-        self.battalionPath = new google.maps.Polyline({
-            geodesic: true,
-            strokeColor: 'white',
-            strokeOpacity: 1.0,
-            strokeWeight: 1,
-            map: map
-        });
-
-        // Update current position info.
-        /*updateMarkerPosition(latLng);*/
-        self.geocodePosition(latLng);
-        self.updateBattalionPosition();
-        self.updateZoom(map.getZoom());
-
-        // Info window for battalions
-        self.infowindow = new google.maps.InfoWindow({
-            content: '<a href="javascript:alert(\'TODO: provide interaction options: Attack, Invite to Team, Chat, etc\')">'+self.username+'</a>'
-        });
-        self.infowindow.open(map, self.battalionMarker);
-        google.maps.event.addListener(self.battalionMarker, 'click', function() {
-            self.infowindow.open(map, self.battalionMarker);
-        });
-
-        // Add dragging event listeners.
-        google.maps.event.addListener(self.battalionTargetMarker, 'dragstart', function() {
-            self.isDragging = true;
-        });
-
-        google.maps.event.addListener(self.battalionTargetMarker, 'drag', function() {
-            self.updateBattalionPath();
-        });
-
-        google.maps.event.addListener(self.battalionTargetMarker, 'dragend', function() {
-            self.isDragging = false;
-            self.moveBattalion(self.battalionTargetMarker.getPosition());
-        });
-
-        google.maps.event.addListener(map, 'rightclick', function(event) {
-            /*self.currentMarker.setPosition(event.latLng);
-            self.geocodePosition(self.currentMarker.getPosition());*/
-        });
-
-        google.maps.event.addListener(map, 'zoom_changed', function() {
-            self.updateZoom(map.getZoom());
-        });
-
-        /*heartbeat = setInterval(getMessages, 5000);*/
-        setInterval(self.updateBattalionPosition, 1000);
+        // Update current game info
+        poll();
+        heartbeat = setInterval(poll, 1000);
     };
 
     self.initializeDefault = function initializeDefault() {
@@ -231,7 +230,7 @@ function Player(username) {
         }
     };
 
-    console.log('Signing In', '"'.self.username.'"');
+    console.log('Signing In', '"'+self.username+'"');
     self.loadGeolocation();
 }
 
