@@ -8,7 +8,7 @@ riskimo.api = new function Api() {
     var apiUrl = 'http://riskimo.mooo.com/webservice/';
 
     self.moveUnitGroup = function moveUnitGroup(position, callback) {
-        $.get(apiUrl + 'move-battalion?username='+riskimo.player.username
+        $.get(apiUrl + 'move-group?username='+riskimo.player.username
             +'&latitude='
             +position.lat()
             +'&longitude='
@@ -28,9 +28,9 @@ riskimo.api = new function Api() {
     };
 
     self.poll = function poll(callback) {
-        $.get(apiUrl + 'battalion-position?username='+riskimo.player.username,
+        $.get(apiUrl + 'group-position?username='+riskimo.player.username,
         function(response) {
-            console.log('Battalion Position', response);
+            console.log('UnitGroup Position', response);
             if (callback) callback(response.response);
         });
     }
@@ -88,7 +88,7 @@ riskimo.UnitGroup = function UnitGroup() {
     var self = this;
 
     var groupMarker = new google.maps.Marker({
-        title: 'Battalion',
+        title: 'Group',
         map: map,
         zIndex: 10,
         icon: {
@@ -97,7 +97,7 @@ riskimo.UnitGroup = function UnitGroup() {
     });
 
     var targetMarker = new google.maps.Marker({
-        title: 'Battalion Target',
+        title: 'Group Target',
         map: map,
         zIndex: -1,
         draggable: true,
@@ -144,7 +144,7 @@ riskimo.UnitGroup = function UnitGroup() {
         riskimo.icons.zoom(groupMarker);
     });
 
-    // Info window for battalions
+    // Info window for groups
     self.infowindow = new google.maps.InfoWindow({
         content: '<a href="javascript:alert(\'TODO: provide interaction options: Attack, Invite to Team, Chat, etc\')">'+riskimo.player.username+'</a>'
     });
