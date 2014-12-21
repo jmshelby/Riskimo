@@ -19,8 +19,8 @@ riskimo.api = new function Api() {
         });
     };
 
-    self.addUnit = function addUnit(callback) {
-        $.get(apiUrl + 'add-unit?username='+riskimo.player.username,
+    self.addUnit = function addUnit(username, callback) {
+        $.get(apiUrl + 'add-unit?username='+username,
         function(response) {
             console.log('Unit Added', response);
             if (callback) callback(response.response);
@@ -113,7 +113,8 @@ riskimo.UnitGroup = function UnitGroup(data) {
             fillColor: 'white',
             fillOpacity: 0.2,
             scale: 30
-        }
+        },
+        visible: riskimo.player.username == data.user.username
     });
 
     var targetPath = new google.maps.Polyline({
@@ -121,7 +122,8 @@ riskimo.UnitGroup = function UnitGroup(data) {
         strokeColor: 'white',
         strokeOpacity: 1.0,
         strokeWeight: 1,
-        map: map
+        map: map,
+        visible: riskimo.player.username == data.user.username
     });
 
     function updatePath() {
@@ -154,9 +156,8 @@ riskimo.UnitGroup = function UnitGroup(data) {
 
     // Info window for groups
     var infowindow = new google.maps.InfoWindow({
-        content: '<a href="javascript:alert(\'TODO: provide interaction options: Attack, Invite to Team, Chat, etc\')">'+player.username+'</a>'
+        content: '<a href="javascript:riskimo.api.addUnit(\''+player.username+'\')">'+player.username+'</a>'
     });
-    infowindow.open(map, groupMarker);
 
     google.maps.event.addListener(groupMarker, 'click', function() {
         infowindow.open(map, groupMarker);
