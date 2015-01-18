@@ -181,12 +181,19 @@ return $this->getUserGroupPosition($user);
 		foreach($positions as $position) {
 
 			// Skip the target position
-			if (!$position->hasArrived()) continue;
+			if ($position->hasArrived()) {
+				$returnData[] = (object) array(
+					'latitude' => $position->lat,
+					'longitude' => $position->long,
+				);
+			} else {
+				$calcedPosition = $this->getGroupPosition($group);
+				$returnData[] = (object) array(
+					'latitude' => $calcedPosition->latitude,
+					'longitude' => $calcedPosition->longitude,
+				);
+			}
 
-			$returnData[] = (object) array(
-				'latitude' => $position->lat,
-				'longitude' => $position->long,
-			);
 		}
 
 		return $returnData;
