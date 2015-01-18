@@ -34,6 +34,16 @@ riskimo.api = new function Api() {
             if (callback) callback(response.response);
         });
     }
+
+    self.attack = function attack(username) {
+        for (var i in game.groups) {
+            if (game.groups[i].player.username == username) {
+                var defender = game.groups[i];
+                console.log('Attacking', defender.player.username);
+                self.moveUnitGroup(riskimo.player.username, defender.getTarget().getPosition());
+            }
+        }
+    }
 }
 
 riskimo.icons = new function Icons() {
@@ -48,6 +58,42 @@ riskimo.icons = new function Icons() {
             = new google.maps.Size(scale, scale);
         marker.getIcon().anchor = new google.maps.Point(scale/2, scale/2);
         marker.setZIndex(marker.setZIndex()); // force icon redraw
+    }
+}
+
+riskimo.controlPanel = new function ControlPanel() {
+    var self = this;
+    var previousPosition;
+
+    function getPoliticalName(responses) {
+        console.log(responses);
+        if (responses) {
+            for (var i in responses) {
+                for (var j in responses[i].types) {
+                    if (responses[i].types[j] == 'political') {
+                        return responses[i].formatted_address;
+                    }
+                }
+            }
+        }
+        return 'Unknown';
+    }
+
+    self.update = function update(group) {
+        var controlPanel = $(document).find('#control_panel');
+        controlPanel.fadeIn();
+        controlPanel.find('#current_units').text(group.unit_count);
+
+        var latLng = new google.maps.LatLng(group.current_position.latitude, group.current_position.longitude);
+        if (!latLng.equals(previousPosition)) {
+            previousPosition = latLng;
+
+            geocoder.geocode({
+                latLng: new google.maps.LatLng(group.current_position.latitude, group.current_position.longitude)
+            }, function(responses) {
+                controlPanel.find('#location').text(getPoliticalName(responses))
+            });
+        }
     }
 }
 
@@ -77,6 +123,10 @@ riskimo.Player = function Player(username) {
         marker.setPosition(position);
     }
 
+    self.addUnit = function addUnit() {
+        riskimo.api.addUnit(self.username);
+    }
+
     console.log('Player Instantiated', '"'+username+'"', self.marker);
 }
 
@@ -86,9 +136,10 @@ riskimo.Unit = function Unit() {
 
 riskimo.UnitGroup = function UnitGroup(data) {
     var self = this;
-    var player;
     var isDragging;
     var infowindow;
+
+    self.player = new riskimo.Player(data.user.username);
 
     var groupMarker = new google.maps.Marker({
         title: 'Group',
@@ -114,7 +165,7 @@ riskimo.UnitGroup = function UnitGroup(data) {
             fillOpacity: 0.2,
             scale: 30
         },
-        visible: riskimo.player.username == data.user.username
+        visible: riskimo.player.username == self.player.username
     });
 
     var targetPath = new google.maps.Polyline({
@@ -123,7 +174,7 @@ riskimo.UnitGroup = function UnitGroup(data) {
         strokeOpacity: 1.0,
         strokeWeight: 1,
         map: map,
-        visible: riskimo.player.username == data.user.username
+        visible: riskimo.player.username == self.player.username
     });
 
     function updatePath() {
@@ -142,9 +193,15 @@ riskimo.UnitGroup = function UnitGroup(data) {
         }
 
         updatePath();
+
+        if (riskimo.player.username == self.player.username) {
+            riskimo.controlPanel.update(data);
+        }
     }
 
-    player = new riskimo.Player(data.user.username);
+    self.getTarget = function getTarget() {
+        return targetMarker;
+    }
 
     self.update(data);
 
@@ -156,11 +213,12 @@ riskimo.UnitGroup = function UnitGroup(data) {
 
     // Info window for groups
     var infowindow = new google.maps.InfoWindow({
-        content: '<a href="javascript:riskimo.api.addUnit(\''+player.username+'\')">'+player.username+'</a>'
+        content: '<a href="javascript:riskimo.api.attack(\''+self.player.username+'\');">Attack '+self.player.username+'</a>'
     });
 
     google.maps.event.addListener(groupMarker, 'click', function() {
         infowindow.open(map, groupMarker);
+        infowindow.setContent(infowindow.getContent());
     });
 
     // Add dragging event listeners.
@@ -174,7 +232,7 @@ riskimo.UnitGroup = function UnitGroup(data) {
 
     google.maps.event.addListener(targetMarker, 'dragend', function() {
         isDragging = false;
-        riskimo.api.moveUnitGroup(player.username, targetMarker.getPosition());
+        riskimo.api.moveUnitGroup(self.player.username, targetMarker.getPosition());
     });
 
 }
