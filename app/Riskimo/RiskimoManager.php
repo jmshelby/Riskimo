@@ -71,9 +71,14 @@ $lastBase = $this->userEstablishesBase($user, 45.78, -104.03);
 		$groups = Group::all();
 		// TODO -- is there a way to make this call faster?
 		foreach($groups as $group) {
+
 			$positionData = $this->getGroupPosition($group);
 			$group->setCurrentGroupPosition($positionData);
-// Load user for consumer view TODO - remove
+
+			$historicData = $this->getGroupHistoricPositions($group);
+			$group->setHistoricGroupPositions($historicData);
+
+// Load user for consumer view TODO - fix so we can remove
 $group->user;
 		}
 		return $groups;
@@ -165,6 +170,22 @@ return $this->getUserGroupPosition($user);
 		}
 
 		return $marker;
+	}
+
+	// ====================================================================
+
+	public function getGroupHistoricPositions($group) {
+		$positions = GroupPosition::forGroup($group)->active()->lastArrivalFirst()->get();
+
+		$returnData = array();
+		foreach($positions as $position) {
+			$returnData[] = (object) array(
+				'latitude' => $position->lat,
+				'longitude' => $position->long,
+			);
+		}
+
+		return $returnData;
 	}
 
 	// ====================================================================
