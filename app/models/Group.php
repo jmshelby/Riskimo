@@ -17,7 +17,10 @@ class Group extends Moloquent
 
 	protected $dates = array('arrival_time', 'departure_time');
 
-	protected $appends = array('current_position', 'historic_positions');
+	protected $appends = array(
+		'current_position',
+		'historic_positions'
+	);
 
 	// == Factories ==============================================================
 
@@ -68,28 +71,20 @@ class Group extends Moloquent
 		return $this;
 	}
 
-	public function getCurrentGroupPosition()
+	public function getCurrentPositionAttribute($value)
 	{
 		return $this->currentGroupPostion;
 	}
 
-	public function getCurrentPositionAttribute($value)
-	{
-		return $this->getCurrentGroupPosition();
-	}
 
-
-	protected $historicGroupPostions;
+	protected $historicGroupPositions;
 	public function setHistoricGroupPositions($positions) {
 		$this->historicGroupPositions = $positions;
+		return $this;
 	}
 
-	public function getHistoricGroupPositions() {
+	public function getHistoricPositionsAttribute($value) {
 		return $this->historicGroupPositions;
-	}
-
-	public function getHistoricPositionsAttribute() {
-		return $this->getHistoricGroupPositions();
 	}
 
 /*
