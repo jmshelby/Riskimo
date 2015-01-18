@@ -117,6 +117,15 @@ riskimo.UnitGroup = function UnitGroup(data) {
         visible: riskimo.player.username == data.user.username
     });
 
+    var historicPath = new google.maps.Polyline({
+        geodesic: true,
+        strokeColor: 'white',
+        strokeOpacity: 1.0,
+        strokeWeight: 1,
+        map: map/*,
+        visible: riskimo.player.username == data.user.username*/
+    });
+
     var targetPath = new google.maps.Polyline({
         geodesic: true,
         strokeColor: 'white',
@@ -126,7 +135,16 @@ riskimo.UnitGroup = function UnitGroup(data) {
         visible: riskimo.player.username == data.user.username
     });
 
-    function updatePath() {
+    function updateHistoricPath(points) {
+        var path = [];
+        for (var i in points) {
+            path.push(new google.maps.LatLng(points[i].latitude, points[i].longitude));
+        }
+
+        historicPath.setPath(path);
+    }
+
+    function updateTargetPath() {
         targetPath.setPath([
             groupMarker.getPosition(),
             targetMarker.getPosition()
@@ -141,7 +159,8 @@ riskimo.UnitGroup = function UnitGroup(data) {
             targetMarker.setPosition(new google.maps.LatLng(target.location.latitude, target.location.longitude));
         }
 
-        updatePath();
+        updateHistoricPath(data.historic_positions);
+        updateTargetPath();
     }
 
     player = new riskimo.Player(data.user.username);
@@ -169,7 +188,7 @@ riskimo.UnitGroup = function UnitGroup(data) {
     });
 
     google.maps.event.addListener(targetMarker, 'drag', function() {
-        updatePath();
+        updateTargetPath();
     });
 
     google.maps.event.addListener(targetMarker, 'dragend', function() {
