@@ -179,6 +179,10 @@ return $this->getUserGroupPosition($user);
 
 		$returnData = array();
 		foreach($positions as $position) {
+
+			// Skip the target position
+			if (!$position->hasArrived()) continue;
+
 			$returnData[] = (object) array(
 				'latitude' => $position->lat,
 				'longitude' => $position->long,
