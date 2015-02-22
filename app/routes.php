@@ -24,6 +24,34 @@ Route::get('/', function()
 
 
 
+Route::get('/house-images/{count}', function($count)
+{
+
+	$houses = HouseImages::take($count)->get();
+
+	$response = array();
+	foreach($houses as $house) {
+		$photos = array();
+		if (is_array($house->imagelinks)) {
+			foreach($house->imagelinks as $photo) {
+				$photos[] = array(
+					'tag' => 'unknown',
+					'src' => $photo,
+				);
+			}
+		}
+
+		$response[] = array(
+			'id' => $house->id,
+			'href' => $house->listingurl,
+			'photos' => $photos,
+		);
+	}
+
+
+	return Response::json($response);
+});
+
 
 
 

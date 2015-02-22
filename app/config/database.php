@@ -90,6 +90,13 @@ return array(
             'database' => 'riskimo'
         ),
 
+        'mongodb-photochem' => array(
+            'driver'   => 'mongodb',
+            'host'     => 'hqopti1',
+            'port'     => 27017,
+            'database' => 'PhotoChemistry'
+        ),
+
 	),
 
 	/*
